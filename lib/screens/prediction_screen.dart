@@ -28,7 +28,8 @@ class _PredictionScreenState extends State<PredictionScreen> {
   }
 
   Future<void> _loadModel() async {
-    await _model.load();
+    await _model.loadModel();
+
     setState(() => _modelLoaded = true);
   }
 
@@ -140,43 +141,31 @@ class _PredictionScreenState extends State<PredictionScreen> {
   }
 
   Future<void> _onPredictPressed() async {
-    final input = [
-      double.tryParse(_nitrogenController.text) ?? 0,
-      double.tryParse(_phosphorusController.text) ?? 0,
-      double.tryParse(_potassiumController.text) ?? 0,
-      double.tryParse(_temperatureController.text) ?? 0,
-      double.tryParse(_humidityController.text) ?? 0,
-      double.tryParse(_soilPHController.text) ?? 0,
-      double.tryParse(_rainfallController.text) ?? 0,
-    ];
+    try {
+      final input = [
+        double.parse(_nitrogenController.text),
+        double.parse(_phosphorusController.text),
+        double.parse(_potassiumController.text),
+        double.parse(_temperatureController.text),
+        double.parse(_humidityController.text),
+        double.parse(_soilPHController.text),
+        double.parse(_rainfallController.text),
+      ];
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+      final result = _model.predict(input);
 
-    final result = _model.predict(input);
-
-    if (context.mounted) Navigator.pop(context);
-
-    if (context.mounted) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Prediction Result'),
           content: Text(
             'Recommended Crop: ${result.crop}\n'
-            'Confidence: ${result.confidence.toStringAsFixed(1)}%',
+            'Confidence: ${result.confidence.toStringAsFixed(2)}%',
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
         ),
       );
+    } catch (e) {
+      debugPrint('Prediction error: $e');
     }
   }
 
